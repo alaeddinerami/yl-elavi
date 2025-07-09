@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,19 @@ import {
   ScrollView,
   Switch,
 } from 'react-native';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+
+const SignUpSchema = Yup.object().shape({
+  firstName: Yup.string().required('Nom obligatoire'),
+  phone: Yup.string()
+    .required('Téléphone obligatoire')
+    .matches(/^[5-7][0-9]{8}$/, 'Format invalide'),
+  password: Yup.string().min(6, 'Min 6 caractères').required('Mot de passe obligatoire'),
+  acceptTerms: Yup.bool().oneOf([true], 'Vous devez accepter les conditions'),
+});
 
 export default function SignUpScreen() {
-  const [firstName, setFirstName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [acceptTerms, setAcceptTerms] = useState(true);
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -28,72 +34,110 @@ export default function SignUpScreen() {
 
         <Text style={styles.title}>S'inscrire</Text>
 
-        <View style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              Nom et prénom <Text style={styles.asterisk}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder=""
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              N° de téléphone <Text style={styles.asterisk}>*</Text>
-            </Text>
-            <View style={styles.phoneContainer}>
-              <View style={styles.countryCodeContainer}>
-                <Text style={[styles.input,styles.countryCode]}>+212</Text>
+        <Formik
+          initialValues={{
+            firstName: '',
+            phone: '',
+            password: '',
+            acceptTerms: false,
+          }}
+          validationSchema={SignUpSchema}
+          onSubmit={(values) => {
+            console.log(values);
+            router.replace('/');
+          }}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
+            <View style={styles.formContainer}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>
+                  Nom et prénom <Text style={styles.asterisk}>*</Text>
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={values.firstName}
+                  onChangeText={handleChange('firstName')}
+                  onBlur={handleBlur('firstName')}
+                  placeholder=""
+                />
+                {touched.firstName && errors.firstName && (
+                  <Text style={{ color: 'red' }}>{errors.firstName}</Text>
+                )}
               </View>
-              <TextInput
-                style={[styles.input, styles.phoneInput]}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="ex. 612345678"
-                keyboardType="phone-pad"
-              />
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>
+                  N° de téléphone <Text style={styles.asterisk}>*</Text>
+                </Text>
+                <View style={styles.phoneContainer}>
+                  <View style={styles.countryCodeContainer}>
+                    <Text style={[styles.input, styles.countryCode]}>+212</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.input, styles.phoneInput]}
+                    value={values.phone}
+                    onChangeText={handleChange('phone')}
+                    onBlur={handleBlur('phone')}
+                    placeholder="ex. 612345678"
+                    keyboardType="phone-pad"
+                  />
+                </View>
+                {touched.phone && errors.phone && (
+                  <Text style={{ color: 'red' }}>{errors.phone}</Text>
+                )}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>
+                  Mot de passe <Text style={styles.asterisk}>*</Text>
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={values.password}
+                  onChangeText={handleChange('password')}
+                  onBlur={handleBlur('password')}
+                  secureTextEntry
+                  placeholder=""
+                />
+                {touched.password && errors.password && (
+                  <Text style={{ color: 'red' }}>{errors.password}</Text>
+                )}
+              </View>
+
+              <TouchableOpacity style={styles.photoSection}>
+                <Text style={styles.photoText}>Prendre photo de profil</Text>
+              </TouchableOpacity>
+
+              <View style={styles.termsContainer}>
+                <Switch
+                  value={values.acceptTerms}
+                  onValueChange={(val) => {
+                    setFieldValue('acceptTerms', val);
+                  }}
+                  trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
+                  thumbColor="#FFFFFF"
+                  ios_backgroundColor="#E0E0E0"
+                />
+                <Text style={styles.termsText}>
+                  Accepter les{' '}
+                  <Text
+                    style={styles.termsLink}
+                    onPress={() => router.push('/(auth)/terms')}
+                  >
+                    termes et les conditions d'utilisation
+                  </Text>
+                </Text>
+              </View>
+              {touched.acceptTerms && errors.acceptTerms && (
+                <Text style={{ color: 'red' }}>{errors.acceptTerms}</Text>
+              )}
+
+              <TouchableOpacity onPress={() => handleSubmit()} style={styles.signUpButton}>
+                <Text style={styles.signUpButtonText}>S'inscrire</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              Mot de passe <Text style={styles.asterisk}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholder=""
-            />
-          </View>
-
-          <TouchableOpacity  style={styles.photoSection}>
-            <Text style={styles.photoText}>Prendre photo de profil</Text>
-          </TouchableOpacity>
-
-          <View style={styles.termsContainer}>
-            <Switch
-              value={acceptTerms}
-              onValueChange={setAcceptTerms}
-              trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
-              thumbColor={acceptTerms ? '#FFFFFF' : '#FFFFFF'}
-              ios_backgroundColor="#E0E0E0"
-            />
-            <Text style={styles.termsText}>
-              Accepter les{' '}
-              <Text style={styles.termsLink}onPress={() => router.push("/(auth)/terms")}>termes et les conditions d'utilisation</Text>
-            </Text>
-          </View>
-
-          <TouchableOpacity style={styles.signUpButton}>
-            <Text style={styles.signUpButtonText}>S'inscrire</Text>
-          </TouchableOpacity>
-        </View>
+          )}
+        </Formik>
       </ScrollView>
     </SafeAreaView>
   );
@@ -168,12 +212,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   photoSection: {
-    backgroundColor:'#F5F5F5',
+    backgroundColor: '#F5F5F5',
     paddingVertical: 30,
     alignItems: 'center',
     marginBottom: 32,
-    borderRadius:20,
-   
+    borderRadius: 20,
   },
   photoText: {
     fontSize: 16,
