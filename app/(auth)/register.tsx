@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,12 @@ import {
   SafeAreaView,
   ScrollView,
   Switch,
+  Image,
 } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
+import { Camera } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 
 const SignUpSchema = Yup.object().shape({
   firstName: Yup.string().required('Nom obligatoire'),
@@ -23,6 +26,25 @@ const SignUpSchema = Yup.object().shape({
 });
 
 export default function SignUpScreen() {
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const openCamera = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access camera is required!');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -104,8 +126,15 @@ export default function SignUpScreen() {
                 )}
               </View>
 
-              <TouchableOpacity style={styles.photoSection}>
-                <Text style={styles.photoText}>Prendre photo de profil</Text>
+              <TouchableOpacity style={styles.photoSection} onPress={openCamera}>
+                {imageUri ? (
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={{ width: 100, height: 100, borderRadius: 50 }}
+                  />
+                ) : (
+                  <Text style={styles.photoText}>Prendre photo de profil</Text>
+                )}
               </TouchableOpacity>
 
               <View style={styles.termsContainer}>
